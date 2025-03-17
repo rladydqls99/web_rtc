@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css" />
   </head>
   <body>
     <h1>Socket Io Chat</h1>
@@ -12,6 +13,16 @@
         <input type="text" placeholder="room name" />
         <button>Enter room</button>
       </form>
+    </div>
+
+    <div id="room-container">
+      <h3></h3>
+      <ul id="room-list"></ul>
+      <form id="message-form">
+        <input type="text" placeholder="message" />
+        <button>Send</button>
+      </form>
+      <ul id="message-list"></ul>
     </div>
   </body>
 

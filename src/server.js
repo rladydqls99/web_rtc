@@ -21,6 +21,9 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on("connection", (socket) => {
+  socket.onAny((event) => {
+    console.log(`Socket: ${event}`);
+  });
   socket.on("join-room", (msg, done) => {
     console.log(msg);
     done();
