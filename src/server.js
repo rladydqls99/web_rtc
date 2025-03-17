@@ -21,12 +21,31 @@ const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on("connection", (socket) => {
+  socket["userName"] = "Anonymous";
+
   socket.onAny((event) => {
     console.log(`Socket: ${event}`);
   });
-  socket.on("join-room", (msg, done) => {
-    console.log(msg);
+
+  socket.on("join-room", (roomName, userName, done) => {
+    if (userName !== "") {
+      socket.userName = userName;
+    }
+
+    socket.join(roomName);
     done();
+    socket.to(roomName).emit("user-connected");
+  });
+
+  socket.on("send-chat-message", (roomName, message, done) => {
+    socket.rooms.forEach((room) => {
+      socket.to(room).emit("chat-message", `${socket.userName}: ${message}`);
+    });
+    done();
+  });
+
+  socket.on("disconnecting", () => {
+    socket.rooms.forEach((room) => socket.to(room).emit("user-disconnected"));
   });
 });
 
