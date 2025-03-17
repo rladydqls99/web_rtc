@@ -15,12 +15,16 @@ app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "home.html"));
 });
+app.get("/*", (_, res) => res.redirect("/"));
 
 const httpServer = http.createServer(app);
 const wsServer = new Server(httpServer);
 
 wsServer.on("connection", (socket) => {
-  console.log("A user connected");
+  socket.on("join-room", (msg, done) => {
+    console.log(msg);
+    done();
+  });
 });
 
 httpServer.listen(port, () => {
