@@ -1,58 +1,87 @@
 const socket = io();
 
-// DOM 요소 선택
-const chatFormContainer = document.getElementById("chat-form-container");
-const chatForm = chatFormContainer.querySelector("form");
+// DOM Elements
+const elements = {
+  chat: {
+    container: document.getElementById("chat-form-container"),
+    form: document.getElementById("chat-form-container").querySelector("form"),
+    userNameInput: document
+      .getElementById("chat-form-container")
+      .querySelector("form")
+      .querySelector("#user-name"),
+    roomNameInput: document
+      .getElementById("chat-form-container")
+      .querySelector("form")
+      .querySelector("#room-name"),
+  },
+  room: {
+    container: document.getElementById("room-container"),
+    form: document.getElementById("room-container").querySelector("form"),
+    chats: document.getElementById("room-container").querySelector("ul"),
+    title: document.getElementById("room-container").querySelector("h3"),
+    messageInput: document
+      .getElementById("room-container")
+      .querySelector("input"),
+  },
+  roomList: {
+    container: document.getElementById("room-list-container"),
+    refreshButton: document
+      .getElementById("room-list-container")
+      .querySelector("button"),
+    list: document.getElementById("room-list-container").querySelector("ul"),
+  },
+};
 
-const roomContainer = document.getElementById("room-container");
-const roomForm = roomContainer.querySelector("form");
-const roomChats = roomContainer.querySelector("ul");
-const roomTitle = roomContainer.querySelector("h3");
+// Initial setup
+elements.room.container.hidden = true;
 
-const messageInput = roomContainer.querySelector("input");
-const userNameInput = chatForm.querySelector("#user-name");
-const roomNameInput = chatForm.querySelector("#room-name");
-
-// 초기 설정
-roomContainer.hidden = true;
-
-// 메시지 관련 함수
+// Message Handler
 const messageHandler = {
   add(message) {
     const chatItem = document.createElement("li");
     chatItem.innerText = message;
-    roomChats.appendChild(chatItem);
+    elements.room.chats.appendChild(chatItem);
   },
 
   send(message) {
     socket.emit("send-chat-message", message, () => {
       this.add(`you: ${message}`);
     });
-    messageInput.value = "";
+    elements.room.messageInput.value = "";
   },
 };
 
-// 방 관련 함수
+// Room Handler
 const roomHandler = {
   show(roomName) {
-    chatFormContainer.hidden = true;
-    roomContainer.hidden = false;
-    roomTitle.innerText = `${roomName} room`;
+    elements.chat.container.hidden = true;
+    elements.room.container.hidden = false;
+    elements.room.title.innerText = `${roomName} room`;
   },
 
   join(userName, roomName) {
     socket.emit("join-room", roomName, userName, () => {
       this.show(roomName);
     });
-    roomNameInput.value = "";
+    elements.chat.roomNameInput.value = "";
+  },
+
+  displayRoomList(rooms) {
+    elements.roomList.list.innerHTML = "";
+
+    rooms.forEach((room) => {
+      const roomItem = document.createElement("li");
+      roomItem.innerText = room;
+      elements.roomList.list.appendChild(roomItem);
+    });
   },
 };
 
-// 이벤트 핸들러
+// Event Handlers
 function handleJoinRoomSubmit(e) {
   e.preventDefault();
-  const userName = userNameInput.value;
-  const roomName = roomNameInput.value;
+  const userName = elements.chat.userNameInput.value;
+  const roomName = elements.chat.roomNameInput.value;
 
   if (!userName || !roomName) {
     alert("사용자 이름과 방 이름을 모두 입력해주세요.");
@@ -64,19 +93,25 @@ function handleJoinRoomSubmit(e) {
 
 function handleSendMessageSubmit(e) {
   e.preventDefault();
-
-  const message = messageInput.value;
-
+  const message = elements.room.messageInput.value;
   if (!message.trim()) return;
-
   messageHandler.send(message);
 }
 
-// 이벤트 리스너 등록
-chatForm.addEventListener("submit", handleJoinRoomSubmit);
-roomForm.addEventListener("submit", handleSendMessageSubmit);
+function handleRefreshRoomList() {
+  socket.emit("refresh-room-list");
+}
 
-// 소켓 이벤트 리스너
+// Event Listeners
+elements.chat.form.addEventListener("submit", handleJoinRoomSubmit);
+elements.room.form.addEventListener("submit", handleSendMessageSubmit);
+elements.roomList.refreshButton.addEventListener(
+  "click",
+  handleRefreshRoomList
+);
+
+// Socket Event Listeners
 socket.on("user-connected", (userName) => alert(`${userName} connected`));
 socket.on("user-disconnected", (userName) => alert(`${userName} disconnected`));
 socket.on("receive-chat-message", messageHandler.add);
+socket.on("refresh-room-list", (rooms) => roomHandler.displayRoomList(rooms));
