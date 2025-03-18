@@ -30,10 +30,13 @@ leaveButton.addEventListener("click", leaveRoom);
 // 미디어 스트림 시작
 async function startMedia() {
   try {
+    // 로컬 카메라와 마이크 접근
     localStream = await navigator.mediaDevices.getUserMedia({
       video: true,
       audio: true,
     });
+
+    // 로컬 비디오 스트림 설정(html 요소에 연결)
     localVideo.srcObject = localStream;
     startButton.disabled = true;
     setStatus("미디어 접근 성공. 이제 방에 참가할 수 있습니다.");
@@ -168,6 +171,7 @@ socket.on("room_joined", (data) => {
   );
 });
 
+// 나는 방에 존재하고, 다른 사용자가 방에 들어온 경우
 socket.on("new_peer", async (data) => {
   setStatus("새로운 피어가 방에 참가했습니다. 연결 시도 중...");
   const pc = createPeerConnection(data.socketId);
