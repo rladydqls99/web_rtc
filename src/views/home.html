@@ -1,40 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>WebRTC와 Socket.IO 시그널링 예제</title>
     <link rel="stylesheet" href="/public/css/style.css" />
-    <link rel="stylesheet" href="https://unpkg.com/mvp.css" />
   </head>
   <body>
-    <h1>Chat Prototype</h1>
-    <div id="chat-form-container">
-      <h3>enter chat</h3>
-      <form>
-        <input id="user-name" type="text" placeholder="user name" />
-        <input id="room-name" type="text" placeholder="room name" />
-        <button>Enter room</button>
-      </form>
+    <div class="container">
+      <h1>WebRTC와 Socket.IO 시그널링 예제</h1>
+
+      <div class="room-input">
+        <input type="text" id="roomInput" placeholder="방 ID 입력" />
+        <button id="joinButton">방 참가</button>
+      </div>
+
+      <div class="video-container">
+        <div class="video-box">
+          <video id="localVideo" autoplay muted playsinline></video>
+          <div class="video-label">내 비디오</div>
+        </div>
+        <div class="video-box">
+          <video id="remoteVideo" autoplay playsinline></video>
+          <div class="video-label">상대방 비디오</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="startButton">미디어 시작</button>
+        <button id="muteAudioButton">오디오 음소거</button>
+        <button id="stopVideoButton">비디오 중지</button>
+        <button id="leaveButton" disabled>방 나가기</button>
+      </div>
+
+      <div class="status" id="status">연결 대기 중...</div>
     </div>
 
-    <div id="room-container">
-      <h3></h3>
-      <ul id="room-list"></ul>
-      <form id="message-form">
-        <input type="text" placeholder="message" />
-        <button>Send</button>
-      </form>
-      <ul id="message-list"></ul>
-    </div>
+    <!-- Socket.IO 클라이언트 라이브러리 -->
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 
-    <div id="room-list-container">
-      <h3>Room List</h3>
-      <button id="refresh-room-list">refresh room list</button>
-      <ul id="room-list"></ul>
-    </div>
+    <!-- 클라이언트 스크립트 -->
+    <script src="/public/js/app.js"></script>
   </body>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/public/js/app.js"></script>
 </html>

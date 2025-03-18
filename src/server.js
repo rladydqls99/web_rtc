@@ -25,92 +25,52 @@ const configureApp = () => {
   app.get("/*", (_, res) => res.redirect("/"));
 };
 
-// Socket event handlers
-class SocketHandlers {
-  static handleJoinRoom(socket, roomName, userName, done) {
-    if (userName && userName.trim() !== "") {
-      socket.userName = userName;
-    }
-
-    socket.join(roomName);
-    socket.to(roomName).emit("user-connected", socket.userName);
-
-    console.log(`${socket.userName} joined room: ${roomName}`);
-    done();
-  }
-
-  static handleChatMessage(socket, message, done) {
-    if (!message || message.trim() === "") {
-      done();
-      return;
-    }
-
-    const formattedMessage = `${socket.userName}: ${message}`;
-
-    socket.rooms.forEach((room) => {
-      if (room !== socket.id) {
-        socket.to(room).emit("receive-chat-message", formattedMessage);
-      }
-    });
-
-    done();
-  }
-
-  static handleDisconnecting(socket) {
-    socket.rooms.forEach((room) => {
-      if (room !== socket.id) {
-        socket.to(room).emit("user-disconnected", socket.userName);
-        console.log(`${socket.userName} left room: ${room}`);
-      }
-    });
-  }
-
-  static handleGetRoomList(io, socket) {
-    const { sids, rooms } = io.sockets.adapter;
-
-    const publicRooms = [];
-    rooms.forEach((_, key) => {
-      if (sids.get(key) === undefined) {
-        publicRooms.push(key);
-      }
-    });
-
-    socket.emit("refresh-room-list", publicRooms);
-  }
-}
-
 // Configure socket connections
 const configureSocketEvents = (io) => {
   io.on("connection", (socket) => {
-    // Set default username
-    socket.userName = "Anonymous";
+    console.log("사용자가 연결됨: " + socket.id);
 
-    console.log(`New connection: ${socket.id}`);
+    // 방 참가 처리
+    socket.on("join", (roomId) => {
+      socket.join(roomId);
+      const roomClients = io.sockets.adapter.rooms.get(roomId);
+      const numClients = roomClients ? roomClients.size : 0;
 
-    // Log all events
-    socket.onAny((event) => {
-      console.log(`Event: ${event} from ${socket.id}`);
+      // 방에 있는 클라이언트 수에 따라 처리
+      io.to(socket.id).emit("room_joined", { roomId, numClients });
+
+      // 방에 새 사용자가 들어왔음을 알림
+      if (numClients > 1) {
+        socket.to(roomId).emit("new_peer", { socketId: socket.id });
+      }
     });
 
-    // Register event handlers
-    socket.on("join-room", (roomName, userName, done) =>
-      SocketHandlers.handleJoinRoom(socket, roomName, userName, done)
-    );
+    // WebRTC 시그널링 메시지 처리
+    socket.on("offer", (data) => {
+      socket.to(data.targetId).emit("offer", {
+        sdp: data.sdp,
+        socketId: socket.id,
+      });
+    });
 
-    socket.on("send-chat-message", (message, done) =>
-      SocketHandlers.handleChatMessage(socket, message, done)
-    );
+    socket.on("answer", (data) => {
+      socket.to(data.targetId).emit("answer", {
+        sdp: data.sdp,
+        socketId: socket.id,
+      });
+    });
 
-    socket.on("refresh-room-list", () =>
-      SocketHandlers.handleGetRoomList(io, socket)
-    );
+    socket.on("ice_candidate", (data) => {
+      socket.to(data.targetId).emit("ice_candidate", {
+        candidate: data.candidate,
+        socketId: socket.id,
+      });
+    });
 
-    socket.on("disconnecting", () =>
-      SocketHandlers.handleDisconnecting(socket)
-    );
-
+    // 연결 종료 처리
     socket.on("disconnect", () => {
-      console.log(`Disconnected: ${socket.id}`);
+      console.log("사용자 연결 종료: " + socket.id);
+      io.emit("peer_disconnected", { socketId: socket.id });
     });
   });
 };
